@@ -1,0 +1,50 @@
+name: Build Assets.car
+
+on:
+  push:
+    paths:
+      - 'icon.png'
+  workflow_dispatch:
+
+jobs:
+  build_car:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build Assets.car from icon.png
+        run: |
+          mkdir -p Icons.xcassets/AppIcon.appiconset
+          cp icon.png Icons.xcassets/AppIcon.appiconset/icon.png
+          cat > Icons.xcassets/AppIcon.appiconset/Contents.json << 'EOF'
+          {
+            "images": [
+              {
+                "idiom": "universal",
+                "platform": "ios",
+                "size": "1024x1024",
+                "filename": "icon.png"
+              }
+            ],
+            "info": {
+              "author": "xcode",
+              "version": 1
+            }
+          }
+          EOF
+
+          xcrun actool Icons.xcassets \
+            --compile . \
+            --platform iphoneos \
+            --minimum-deployment-target 16.0 \
+            --product-type com.apple.product-type.application \
+            --app-icon AppIcon \
+            --output-partial-info-plist /dev/null
+
+          echo "--- Assets.car produced ---"
+          ls -lh Assets.car
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: assets-car
+          path: Assets.car
